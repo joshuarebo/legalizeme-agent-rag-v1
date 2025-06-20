@@ -1,0 +1,13 @@
+# Minimal development dependencies
+fastapi==0.109.2
+uvicorn==0.27.1
+pydantic==2.6.1
+python-multipart==0.0.9
+python-dotenv==1.0.1
+langchain==0.1.8
+faiss-cpu==1.7.4
+transformers==4.38.1
+torch==2.7.1
+beautifulsoup4==4.12.2
+httpx==0.26.0
+aiohttp==3.9.1
