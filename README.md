@@ -4,12 +4,14 @@ LegalizeMe is an intelligent legal AI backend system deployed at [https://www.le
 
 ## System Architecture Overview
 
-The LegalizeMe system consists of three main phases:
+The LegalizeMe system consists of five main phases:
 1. **Phase 1**: Basic RAG pipeline with document processing
 2. **Phase 2**: Enhanced RAG with hybrid search and performance optimization
 3. **Phase 3**: Full agent-based system with LangGraph workflow and reasoning capabilities
+4. **Phase 4**: Advanced document drafting, summarization, and enhanced response generation
+5. **Phase 5**: Comprehensive testing, performance optimization, and deployment
 
-The current implementation is **Phase 3**, which incorporates all features from previous phases with added agent capabilities.
+The current implementation is **Phase 5**, which incorporates extensive testing, performance optimization, and production-ready deployment configuration.
 
 ### Core Components
 
@@ -17,7 +19,12 @@ The current implementation is **Phase 3**, which incorporates all features from 
 - **CounselAgent**: LangGraph-based agent with multi-step reasoning and citation generation
 - **Document Processing**: PDF and web content parsing with enhanced metadata extraction
 - **Crawling System**: Automated crawling of Kenya Law website for up-to-date legal information
-- **Performance Optimization**: Automatic tuning of vector database and LLM parameters
+- **Performance Optimizer**: Automatic tuning of vector database and LLM parameters for optimal performance
+- **Document Generator**: Context-aware document drafting with templates and revision capabilities
+- **Document Summarizer**: Extractive and abstractive summarization of legal documents
+- **Response Generator**: Structured responses with reasoning traces and confidence indicators
+- **Caching System**: Multi-level caching for improved response times
+- **Metrics Collector**: Comprehensive performance monitoring and metrics collection
 
 ## Features
 
@@ -25,9 +32,20 @@ The current implementation is **Phase 3**, which incorporates all features from 
 - **Document Understanding**: Parses and understands PDFs, legal texts, judgments, etc.
 - **Citation Support**: Provides citations and reasoning traces for all responses
 - **Legal Document Drafting**: Creates drafts of legal documents like contracts and notices
+- **Document Templates**: Customizable templates for common legal documents
+- **Document Summarization**: Extracts key points and generates concise summaries of legal documents
+- **Document Comparison**: Compares multiple documents to identify similarities and differences
+- **Enhanced Responses**: Structured legal responses with reasoning traces and confidence indicators
+- **Legal Language Simplification**: Makes complex legal concepts accessible to non-experts
 - **Automated Data Crawling**: Regularly crawls Kenya Law website to keep legal data up-to-date
 - **Advanced Legal Reasoning**: Implements multi-step legal reasoning with issue identification, rule application, and conclusion generation
 - **Performance Optimization**: Automatic tuning of vector store and LLM parameters for faster responses
+- **Comprehensive Testing**: Extensive test suite with automated testing in CI/CD pipeline
+- **Advanced Caching**: Multi-level caching strategy for improved response times
+- **Parallel Processing**: Efficient handling of concurrent requests with parallel processing
+- **Resource Monitoring**: Real-time monitoring of system resources and performance metrics
+- **Docker Deployment**: Containerized deployment for easy scaling and portability
+- **Collaborative Editing**: Real-time collaborative document editing capabilities
 
 ## Tech Stack
 
@@ -38,9 +56,58 @@ LegalizeMe is built with a fully open-source stack:
 - **Hugging Face Transformers** – For open-source LLMs (Mixtral)
 - **Unstructured.io**, **PyMuPDF** – For parsing PDFs and HTML legal documents
 - **FastAPI** – For exposing API endpoints
-- **MiniMax-01** – GitHub fallback model
+- **Redis** – For caching and session management
+- **Docker** – For containerization and deployment
+- **Github Actions** – For CI/CD pipeline
+- **NGINX** – For serving the application and load balancing
 - **BeautifulSoup4 & aiocron** - For web crawling and scheduling
 - **FAISS & Ray** - For optimized vector indexing and distributed computing
+
+## Deployment (Docker)
+
+> **Quick run for frontend developers**
+>
+> ```bash
+> docker run --rm -p 8000:8000 ghcr.io/legalizeme/counsel-api:v0.1.0
+> # Swagger / OpenAPI UI
+> open http://localhost:8000/docs
+> ```
+>
+> The image ships with all models pre-downloaded; startup time is <15 s on a modern CPU box.
+>
+> **Building locally**
+>
+> ```bash
+> # clone
+> git clone https://github.com/joshuarebo/legalizeme-agent-rag-v1.git
+> cd legalizeme-agent-rag-v1
+>
+> # one-shot build
+> docker build -t counsel-api:dev .
+> ```
+>
+> **Environment overrides** (optional)
+>
+> * `HF_TOKEN` – HuggingFace access token if you need gated models
+> * `MODEL_CHAT` – override default chat LLM id
+> * `MODEL_EMBEDDING` – override embedding model id
+>
+> ```bash
+> docker run -e MODEL_CHAT="mistralai/Mistral-7B-Instruct-v0.2" -p 8000:8000 counsel-api:dev
+> ```
+>
+> ## Public API
+>
+> | Method | Path | Purpose |
+> | ------ | ---- | ------- |
+> | GET | `/` | Welcome / service metadata |
+> | POST | `/query` | Ask a legal question (RAG chat). Body → `{ "question": "string" }` |
+> | POST | `/summarize` | Summarise supplied doc(s). Body → multipart or JSON |
+> | POST | `/draft` | Generate a draft doc based on template & params |
+> | GET | `/crawler/status` | Current crawler job & queue depth |
+> | GET | `/performance/status` | RAM, CPU & vector-DB stats |
+>
+> Full interactive docs are always available at `/docs` (Swagger UI) and `/openapi.json`.
 
 ## Getting Started
 

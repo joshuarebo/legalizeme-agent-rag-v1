@@ -1,0 +1,23 @@
+# CPU-only pins and strict versions to avoid GPU and resolver backtracking
+-f https://download.pytorch.org/whl/torch_stable.html
+
+# PyTorch ecosystem (CPU wheels)
+torch==2.2.2+cpu
+torchvision==0.17.2+cpu
+torchaudio==2.2.2+cpu
+
+# Packages that often pull GPU or many versions
+onnxruntime==1.15.1
+sentence-transformers==2.6.1
+layoutparser==0.3.4
+
+# Llama ecosystem – pin to latest tested versions to stop backtracking
+llama-parse==0.6.35
+llama-cloud-services==0.6.35
+langchain-openai==0.3.24
+unstructured-client==0.35.0
+# Additional pins to tame pip resolver
+fsspec==2023.10.0
+frozenlist==1.6.2
+greenlet==2.0.2
+jsonpointer==2.4
