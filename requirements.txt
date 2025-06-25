@@ -7,7 +7,7 @@ python-dotenv==1.0.1
 
 # LangGraph and Agent Components
 langgraph==0.1.11
-smol-agent==0.0.2
+# smol-agent==0.0.2  # removed; stub used instead
 langchain==0.1.8
 langchain-community==0.0.21
 haystack-ai==2.0.0
