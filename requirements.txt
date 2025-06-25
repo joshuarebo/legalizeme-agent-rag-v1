@@ -6,7 +6,7 @@ python-multipart==0.0.9
 python-dotenv==1.0.1
 
 # LangGraph and Agent Components
-langgraph==0.1.11
+langgraph==0.2.20
 # smol-agent==0.0.2  # removed; stub used instead
 langchain==0.1.8
 langchain-community==0.0.21
