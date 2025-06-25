@@ -32,7 +32,7 @@ jobs:
           python -m pytest -q || true  # ignore if no tests collected
 
       - name: Build Docker image
-        run: docker build -t legalizeme-backend .
+        run: docker build -f Dockerfile.ci -t legalizeme-backend .
 
       - name: Run container and health-check
         env:
