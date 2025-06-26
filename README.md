@@ -109,6 +109,29 @@ LegalizeMe is built with a fully open-source stack:
 >
 > Full interactive docs are always available at `/docs` (Swagger UI) and `/openapi.json`.
 
+## Docker Usage (Recommended)
+
+### Pull & run prebuilt image
+
+```
+docker pull ghcr.io/your-org/legalizeme-backend:latest
+export HUGGINGFACE_API_KEY=<your-hf-token>
+docker run -p 8000:8000 -e HUGGINGFACE_API_KEY legalizeme-backend:latest
+# Swagger UI → http://localhost:8000/docs
+```
+
+### Build locally (if you’re contributing)
+
+```
+docker build -f Dockerfile.ci -t legalizeme-backend:dev .
+export HUGGINGFACE_API_KEY=<your-hf-token>
+docker run -p 8000:8000 -e HUGGINGFACE_API_KEY legalizeme-backend:dev
+```
+
+The `Dockerfile.ci` uses `requirements-docker-clean.txt`, so all dependencies are baked into the image; you only supply the token at runtime.
+
+---
+
 ## Getting Started
 
 ### Prerequisites
