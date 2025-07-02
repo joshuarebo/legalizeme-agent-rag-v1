@@ -16,8 +16,6 @@ llama-index==0.10.11
 llama-index-readers-file==0.1.4
 llama-index-readers-llama-parse==0.1.6
 llama-parse==0.6.37
-llama-cloud-services==0.6.37
-llama-cloud==0.1.29
 llama-index-vector-stores-faiss==0.1.2
 guidance==0.1.8
 
