@@ -63,17 +63,17 @@ LegalizeMe is built with a fully open-source stack:
 - **BeautifulSoup4 & aiocron** - For web crawling and scheduling
 - **FAISS & Ray** - For optimized vector indexing and distributed computing
 
-## Deployment (Docker)
+## Docker Quick Start
 
 > **Quick run for frontend developers**
 >
 > ```bash
-> docker run --rm -p 8000:8000 ghcr.io/legalizeme/counsel-api:v0.1.0
+> docker run --rm -p 8000:8000 ghcr.io/legalizeme/legalizeme-backend:latest
 > # Swagger / OpenAPI UI
 > open http://localhost:8000/docs
 > ```
 >
-> The image ships with all models pre-downloaded; startup time is <15 s on a modern CPU box.
+> The pre-built image bundles all models and dependencies. Startup is under 15 s on a modern CPU.
 >
 > **Building locally**
 >
@@ -83,7 +83,7 @@ LegalizeMe is built with a fully open-source stack:
 > cd legalizeme-agent-rag-v1
 >
 > # one-shot build
-> docker build -t counsel-api:dev .
+> docker build -t legalizeme-backend:dev .
 > ```
 >
 > **Environment overrides** (optional)
@@ -93,7 +93,7 @@ LegalizeMe is built with a fully open-source stack:
 > * `MODEL_EMBEDDING` – override embedding model id
 >
 > ```bash
-> docker run -e MODEL_CHAT="mistralai/Mistral-7B-Instruct-v0.2" -p 8000:8000 counsel-api:dev
+> docker run -e MODEL_CHAT="mistralai/Mistral-7B-Instruct-v0.2" -p 8000:8000 legalizeme-backend:dev
 > ```
 >
 > ## Public API
@@ -109,7 +109,7 @@ LegalizeMe is built with a fully open-source stack:
 >
 > Full interactive docs are always available at `/docs` (Swagger UI) and `/openapi.json`.
 
-## Docker Usage (Recommended)
+
 
 ### Pull & run prebuilt image
 
