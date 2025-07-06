@@ -16,11 +16,17 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements.txt /tmp/requirements.txt
+COPY requirements-docker-clean.txt /tmp/requirements.txt
 
-# Install Python dependencies with explicit upgrade of pip
+# Install Python dependencies with explicit upgrade of pip and debug output
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r /tmp/requirements.txt
+    pip install --no-cache-dir -r /tmp/requirements.txt && \
+    echo "Installed packages:" && \
+    pip list && \
+    echo "Python path:" && \
+    python -c "import sys; print('\n'.join(sys.path))" && \
+    echo "Testing langgraph import:" && \
+    python -c "from langgraph.graph import StateGraph, END; print('✅ LangGraph import successful')"
 
 # Copy application code
 COPY . /app
@@ -30,7 +36,14 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Create non-root user
-RUN useradd --create-home --shell /bin/bash app
+RUN useradd --create-home --shell /bin/bash app && \
+    chown -R app:app /app
+
 USER app
+
+# Verify imports again after user switch
+RUN echo "Testing imports as app user:" && \
+    python -c "from langgraph.graph import StateGraph, END; print('✅ LangGraph import successful as app user')" && \
+    python -c "import app.agents.counsel_agent; print('✅ Counsel agent import successful')"
 
 CMD ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
