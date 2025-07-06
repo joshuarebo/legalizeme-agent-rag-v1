@@ -53,8 +53,8 @@ jobs:
     name: 🚀 Deploy to AWS with Copilot
     needs: [test-and-build]  # Run only after test-and-build succeeds
     runs-on: ubuntu-latest
-    # Only deploy on pushes to main/master branch (not on PRs)
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    # Only deploy on pushes to main/master/clean-branch (not on PRs)
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/clean-branch') || github.event_name == 'workflow_dispatch'
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -89,20 +89,22 @@ jobs:
       - name: 🔍 Verify Copilot Configuration
         run: |
           echo "Checking if Copilot app exists..."
-          if copilot app ls 2>/dev/null | grep -q "counsel-ai"; then
-            echo "✅ Copilot app 'counsel-ai' found"
+          if copilot app ls 2>/dev/null | grep -q "legalizeme-ai"; then
+            echo "✅ Copilot app 'legalizeme-ai' found"
           else
-            echo "⚠️ Copilot app 'counsel-ai' not found - may need manual initialization"
+            echo "⚠️ Copilot app 'legalizeme-ai' not found - will be created during deployment"
           fi
 
       - name: 🚀 Deploy API with Copilot
+        env:
+          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           echo "Starting deployment to production environment..."
           echo "Current directory: $(pwd)"
           echo "Available files: $(ls -la)"
           
           # Ensure we're in the right directory context for Copilot
-          # Copilot expects to find copilot/ directory and manifest files
           if [ -d "copilot" ]; then
             echo "✅ Found copilot directory"
             ls -la copilot/
@@ -111,9 +113,10 @@ jobs:
             exit 1
           fi
           
-          # Deploy the service
-          echo "Deploying API service to production..."
-          copilot svc deploy --name api --env prod
+          # Make deployment script executable and run it
+          chmod +x deploy-production.sh
+          echo "🚀 Running automated deployment script..."
+          ./deploy-production.sh
           
           echo "✅ Deployment completed successfully"
 
