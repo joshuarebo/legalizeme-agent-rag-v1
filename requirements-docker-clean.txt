@@ -32,10 +32,12 @@ apscheduler==3.10.4
 pandas==2.1.4
 requests==2.31.0
 
-# LangChain Core (without heavy dependencies)
+# LangChain and Graph Dependencies
 langchain-core==0.1.23
 langchain-text-splitters==0.0.1
 langgraph==0.2.20
+networkx>=3.0
+typing-extensions>=4.5.0
 
 # Redis client
 redis==5.0.1
