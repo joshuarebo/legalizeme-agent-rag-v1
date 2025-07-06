@@ -20,13 +20,21 @@ COPY requirements-docker-clean.txt /tmp/requirements.txt
 
 # Install Python dependencies with explicit upgrade of pip and debug output
 RUN pip install --no-cache-dir --upgrade pip && \
+    # Install langgraph and its dependencies first
+    pip install --no-cache-dir "langgraph==0.2.20" "networkx>=3.0" "typing-extensions>=4.5.0" && \
+    # Install remaining requirements
     pip install --no-cache-dir -r /tmp/requirements.txt && \
+    # Debug output
     echo "Installed packages:" && \
     pip list && \
     echo "Python path:" && \
     python -c "import sys; print('\n'.join(sys.path))" && \
     echo "Testing langgraph import:" && \
-    python -c "from langgraph.graph import StateGraph, END; print('✅ LangGraph import successful')"
+    python -c "from langgraph.graph import StateGraph, END; print('✅ LangGraph import successful')" && \
+    # Verify langgraph installation
+    pip show langgraph && \
+    # List all files in site-packages related to langgraph
+    find /usr/local/lib/python3.11/site-packages/langgraph -type f
 
 # Copy application code
 COPY . /app
@@ -44,6 +52,9 @@ USER app
 # Verify imports again after user switch
 RUN echo "Testing imports as app user:" && \
     python -c "from langgraph.graph import StateGraph, END; print('✅ LangGraph import successful as app user')" && \
-    python -c "import app.agents.counsel_agent; print('✅ Counsel agent import successful')"
+    python -c "import app.agents.counsel_agent; print('✅ Counsel agent import successful')" && \
+    # Additional debug info
+    python -c "import langgraph; print(f'LangGraph version: {langgraph.__version__}')" && \
+    python -c "import sys; print('Python path:'); print('\n'.join(sys.path))"
 
 CMD ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
