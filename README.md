@@ -1,471 +1,481 @@
-# LegalizeMe: Advanced Legal AI Assistant for Kenyan Law
+# 🏛️ LegalizeMe AI Agent
 
-LegalizeMe is an intelligent legal AI backend system deployed at [https://www.legalizeme.site](https://www.legalizeme.site). It provides comprehensive legal assistance based on Kenyan law, leveraging advanced AI techniques to retrieve information, parse documents, and generate legal responses with citations and detailed reasoning.
+> **Advanced Multi-LLM Legal AI Assistant for Kenyan Law**  
+> Production-ready FastAPI backend with intelligent model routing, AWS deployment, and comprehensive legal document processing.
 
-## System Architecture Overview
+[![CI/CD](https://github.com/joshuarebo/legalizeme-agent-rag-v1/workflows/Backend%20CI/badge.svg)](https://github.com/joshuarebo/legalizeme-agent-rag-v1/actions)
+[![AWS Copilot](https://img.shields.io/badge/AWS-Copilot-orange)](https://aws.github.io/copilot-cli/)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-green.svg)](https://fastapi.tiangolo.com/)
 
-The LegalizeMe system consists of five main phases:
-1. **Phase 1**: Basic RAG pipeline with document processing
-2. **Phase 2**: Enhanced RAG with hybrid search and performance optimization
-3. **Phase 3**: Full agent-based system with LangGraph workflow and reasoning capabilities
-4. **Phase 4**: Advanced document drafting, summarization, and enhanced response generation
-5. **Phase 5**: Comprehensive testing, performance optimization, and deployment
+## 🚀 Quick Start
 
-The current implementation is **Phase 5**, which incorporates extensive testing, performance optimization, and production-ready deployment configuration.
+### Frontend Integration
 
-### Core Components
+```bash
+# Production API Endpoint
+BASE_URL="https://your-api-domain.com"
 
-- **KenyaLawRetriever**: Advanced RAG component with hybrid search, query expansion, and filtering
-- **CounselAgent**: LangGraph-based agent with multi-step reasoning and citation generation
-- **Document Processing**: PDF and web content parsing with enhanced metadata extraction
-- **Crawling System**: Automated crawling of Kenya Law website for up-to-date legal information
-- **Performance Optimizer**: Automatic tuning of vector database and LLM parameters for optimal performance
-- **Document Generator**: Context-aware document drafting with templates and revision capabilities
-- **Document Summarizer**: Extractive and abstractive summarization of legal documents
-- **Response Generator**: Structured responses with reasoning traces and confidence indicators
-- **Caching System**: Multi-level caching for improved response times
-- **Metrics Collector**: Comprehensive performance monitoring and metrics collection
-
-## Features
-
-- **Real-time Legal Data**: Retrieves and reasons over Kenyan legal data from [Kenya Law](https://new.kenyalaw.org/)
-- **Document Understanding**: Parses and understands PDFs, legal texts, judgments, etc.
-- **Citation Support**: Provides citations and reasoning traces for all responses
-- **Legal Document Drafting**: Creates drafts of legal documents like contracts and notices
-- **Document Templates**: Customizable templates for common legal documents
-- **Document Summarization**: Extracts key points and generates concise summaries of legal documents
-- **Document Comparison**: Compares multiple documents to identify similarities and differences
-- **Enhanced Responses**: Structured legal responses with reasoning traces and confidence indicators
-- **Legal Language Simplification**: Makes complex legal concepts accessible to non-experts
-- **Automated Data Crawling**: Regularly crawls Kenya Law website to keep legal data up-to-date
-- **Advanced Legal Reasoning**: Implements multi-step legal reasoning with issue identification, rule application, and conclusion generation
-- **Performance Optimization**: Automatic tuning of vector store and LLM parameters for faster responses
-- **Comprehensive Testing**: Extensive test suite with automated testing in CI/CD pipeline
-- **Advanced Caching**: Multi-level caching strategy for improved response times
-- **Parallel Processing**: Efficient handling of concurrent requests with parallel processing
-- **Resource Monitoring**: Real-time monitoring of system resources and performance metrics
-- **Docker Deployment**: Containerized deployment for easy scaling and portability
-- **Collaborative Editing**: Real-time collaborative document editing capabilities
-
-## Tech Stack
-
-LegalizeMe is built with a fully open-source stack:
-
-- **LangGraph** – For memory-based graph-agent workflows
-- **Haystack** – For RAG pipeline with FAISS vector database
-- **Hugging Face Transformers** – For open-source LLMs (Mixtral)
-- **Unstructured.io**, **PyMuPDF** – For parsing PDFs and HTML legal documents
-- **FastAPI** – For exposing API endpoints
-- **Redis** – For caching and session management
-- **Docker** – For containerization and deployment
-- **Github Actions** – For CI/CD pipeline
-- **NGINX** – For serving the application and load balancing
-- **BeautifulSoup4 & aiocron** - For web crawling and scheduling
-- **FAISS & Ray** - For optimized vector indexing and distributed computing
-
-## Docker Quick Start
-
-> **Quick run for frontend developers**
->
-> ```bash
-> docker run --rm -p 8000:8000 ghcr.io/legalizeme/legalizeme-backend:latest
-> # Swagger / OpenAPI UI
-> open http://localhost:8000/docs
-> ```
->
-> The pre-built image bundles all models and dependencies. Startup is under 15 s on a modern CPU.
->
-> **Building locally**
->
-> ```bash
-> # clone
-> git clone https://github.com/joshuarebo/legalizeme-agent-rag-v1.git
-> cd legalizeme-agent-rag-v1
->
-> # one-shot build
-> docker build -t legalizeme-backend:dev .
-> ```
->
-> **Environment overrides** (optional)
->
-> * `HF_TOKEN` – HuggingFace access token if you need gated models
-> * `MODEL_CHAT` – override default chat LLM id
-> * `MODEL_EMBEDDING` – override embedding model id
->
-> ```bash
-> docker run -e MODEL_CHAT="mistralai/Mistral-7B-Instruct-v0.2" -p 8000:8000 legalizeme-backend:dev
-> ```
->
-> ## Public API
->
-> | Method | Path | Purpose |
-> | ------ | ---- | ------- |
-> | GET | `/` | Welcome / service metadata |
-> | POST | `/query` | Ask a legal question (RAG chat). Body → `{ "question": "string" }` |
-> | POST | `/summarize` | Summarise supplied doc(s). Body → multipart or JSON |
-> | POST | `/draft` | Generate a draft doc based on template & params |
-> | GET | `/crawler/status` | Current crawler job & queue depth |
-> | GET | `/performance/status` | RAM, CPU & vector-DB stats |
->
-> Full interactive docs are always available at `/docs` (Swagger UI) and `/openapi.json`.
-
-
-
-### Pull & run prebuilt image
-
-```
-docker pull ghcr.io/your-org/legalizeme-backend:latest
-export HUGGINGFACE_API_KEY=<your-hf-token>
-docker run -p 8000:8000 -e HUGGINGFACE_API_KEY legalizeme-backend:latest
-# Swagger UI → http://localhost:8000/docs
+# Development
+BASE_URL="http://localhost:8000"
 ```
 
-### Build locally (if you’re contributing)
+### Key Endpoints for Frontend
+
+```typescript
+// Model Selection
+GET  /models                 // List available AI models
+POST /query                  // Legal question answering
+POST /summarize              // Document summarization  
+POST /draft                  // Legal document drafting
+GET  /health                 // Service health check
+```
+
+### Example API Usage
+
+```javascript
+// Query with model selection
+const response = await fetch(`${BASE_URL}/query`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    query: "What are the employment termination requirements in Kenya?",
+    model: "claude-4",           // AI model choice
+    temperature: 0.3,            // Response creativity (0-1)
+    max_tokens: 2048            // Response length limit
+  })
+});
+
+// Get available models
+const models = await fetch(`${BASE_URL}/models`).then(r => r.json());
+console.log(models.available_models); 
+// ["claude-4", "hunyuan-a13b", "flan-t5", "mixtral", "llama"]
+```
+
+## 🧠 AI Models Available
+
+| Model | Best For | Speed | Cost | Context |
+|-------|----------|-------|------|---------|
+| **Claude 4** | Complex legal analysis, reasoning | ⚡⚡⚡ | 💰💰💰 | 200K tokens |
+| **Hunyuan A13B** | Multilingual legal queries | ⚡⚡ | 💰💰 | 32K tokens |
+| **FLAN-T5** | Development, simple Q&A | ⚡⚡⚡⚡ | 💰 | 2K tokens |
+| **Mixtral** | General legal questions | ⚡⚡ | 💰💰 | 32K tokens |
+| **LLaMA 3** | Reasoning, analysis | ⚡⚡ | 💰💰 | 8K tokens |
+
+## 📁 Project Structure
 
 ```
-docker build -f Dockerfile.ci -t legalizeme-backend:dev .
-export HUGGINGFACE_API_KEY=<your-hf-token>
-docker run -p 8000:8000 -e HUGGINGFACE_API_KEY legalizeme-backend:dev
+legalizeme-agent-rag-v1/
+├── 🏗️  app/                     # Main application
+│   ├── agents/                  # AI agent orchestration
+│   │   └── counsel_agent.py     # Main legal AI agent
+│   ├── api/                     # FastAPI endpoints
+│   │   ├── main.py             # Primary API routes
+│   │   ├── crawler.py          # Web crawling endpoints
+│   │   └── performance.py      # Performance monitoring
+│   ├── utils/                   # Core utilities
+│   │   ├── llm_router.py       # Multi-model routing
+│   │   ├── claude_model.py     # Claude 4 integration
+│   │   ├── hunyuan_model.py    # Hunyuan A13B integration
+│   │   └── llm_factory.py      # Model factory
+│   ├── rag/                     # Retrieval-Augmented Generation
+│   │   ├── retriever.py        # Document retrieval
+│   │   └── legal_reasoner.py   # Legal reasoning engine
+│   ├── parsers/                 # Document processing
+│   │   ├── document_parser.py  # PDF/DOCX processing
+│   │   └── web_parser.py       # Web content parsing
+│   └── optimization/            # Performance optimization
+├── 🧪 tests/                    # Test suites
+├── 📜 scripts/                  # Utility scripts
+├── ☁️  copilot/                 # AWS deployment config
+├── ⚙️  .github/                 # CI/CD workflows
+└── 📊 data/                     # Data storage
 ```
 
-The `Dockerfile.ci` uses `requirements-docker-clean.txt`, so all dependencies are baked into the image; you only supply the token at runtime.
-
----
-
-## Getting Started
+## 🛠️ Development Setup
 
 ### Prerequisites
 
-- Python 3.11+
-- Docker (optional, for containerized deployment)
+- **Python 3.11+**
+- **Docker** (for containerization)
+- **AWS CLI** (for deployment)
+- **Git**
 
-### Installation
+### Local Development
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/joshuarebo/legalizeme-agent-rag-v1.git
-   cd legalizeme-agent-rag-v1
-   ```
+```bash
+# 1. Clone repository
+git clone https://github.com/joshuarebo/legalizeme-agent-rag-v1.git
+cd legalizeme-agent-rag-v1
 
-2. Run the application using one of the provided scripts:
-   
-   **For Windows users (Recommended):**
-   ```bash
-   # Full installation with all features (PowerShell script with fallback to batch)
-   run_app.bat
-   
-   # Minimal installation for development (lighter dependencies)
-   run_minimal.bat
-   
-   # Run Phase 3 specific tests
-   run_phase3_test.bat
-   ```
-   
-   **For PowerShell users:**
-   ```powershell
-   # Full installation with all features
-   .\run_app.ps1
-   ```
+# 2. Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-   **Manual installation:**
-   ```bash
-   # Create virtual environment
-   python -m venv venv
-   
-   # Activate virtual environment
-   source venv/bin/activate  # Linux/Mac
-   venv\Scripts\activate     # Windows
-   
-   # Install dependencies
-   pip install -r requirements.txt
-   
-   # Run the application
-   python -m app.main
-   ```
+# 3. Install dependencies
+pip install -r requirements.txt
 
-3. Access the API at http://localhost:8000
+# 4. Set environment variables
+cp .env.example .env  # Create and configure
+
+# 5. Start development server
+python -m uvicorn app.api.main:app --reload --host 0.0.0.0 --port 8000
+```
 
 ### Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+```env
+# Required for production
+AWS_ACCESS_KEY_ID=your_aws_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret
+AWS_REGION=us-east-1
 
-```
-# Core settings
-OPENAI_API_KEY=your_openai_key_here  # Optional, used as fallback
-HUGGINGFACE_API_KEY=your_hf_key_here  # Optional, for HF model access
-FAISS_INDEX_PATH=data/vector_db  # Default location for vector database
+# Optional API keys (for enhanced models)
+HUGGINGFACE_API_KEY=your_hf_key
+OPENAI_API_KEY=your_openai_key
 
-# Optional settings
-LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR
-ENABLE_CRAWLER=true  # Set to false to disable auto-crawling
-ENABLE_PERFORMANCE_OPTIMIZER=true  # Set to false to disable auto-optimization
-```
-
-## API Endpoints for Frontend Integration
-
-LegalizeMe exposes the following API endpoints for frontend integration:
-
-### Main Endpoints
-
-- `POST /api/v1/query` – Primary endpoint for legal questions
-- `POST /api/v1/summarize` – Summarizes legal documents with context
-- `POST /api/v1/draft` – Drafts legal documents based on requirements
-
-### Enhanced Endpoints (Phase 2 & 3)
-
-- `POST /api/v1/enhanced/query` – Advanced query endpoint with multi-step reasoning
-- `POST /api/v1/enhanced/analyze` – Analyzes legal documents with detailed structure
-- `POST /api/v1/enhanced/compare` – Compares multiple legal documents or scenarios
-
-### Admin & Monitoring Endpoints
-
-- `GET /api/v1/crawler/status` – Get the current status of the Kenya Law crawler
-- `POST /api/v1/crawler/trigger/full` – Manually trigger a full crawl of Kenya Law
-- `POST /api/v1/crawler/trigger/quick` – Trigger a quick update of recent content
-- `GET /api/v1/performance/status` – Get the status of the performance optimization
-- `POST /api/v1/performance/optimize` – Manually trigger performance optimization
-
-### MCP Server for Advanced Integration
-
-For frontend applications requiring streaming responses and complex interactions, use the Model Context Protocol (MCP) server:
-
-- Server Location: `mcp_server/legal_mcp_server.py`
-- Endpoint: `ws://localhost:8765` (when running locally)
-- Protocol: WebSocket with [MCP Protocol](https://github.com/microsoft/MCP)
-
-## Detailed API Request/Response Examples
-
-### 1. Basic Query Endpoint
-
-**Request:**
-```json
-POST /api/v1/query
-Content-Type: application/json
-
-{
-  "query": "What are the legal requirements for terminating an employee under Kenyan law?",
-  "options": {
-    "include_citations": true,
-    "include_reasoning": true
-  }
-}
+# Application settings
+DEBUG_MODE=true
+PRIMARY_LLM_TYPE=claude-4
+MODEL_CACHE_DIR=./data/model_cache
 ```
 
-**Response:**
-```json
-{
-  "response": "Under Kenyan law, terminating an employee requires following these requirements: ...",
-  "citations": [
-    {
-      "text": "Employment Act, 2007",
-      "url": "https://new.kenyalaw.org/legislation/employment-act-2007/",
-      "section": "Section 35",
-      "relevance": 0.92
-    }
-  ],
-  "reasoning_trace": "1. Identified the query relates to employment termination in Kenya\n2. Retrieved relevant statutes and case law...",
-  "confidence_score": 0.87
-}
+## 🚀 Deployment
+
+### AWS Copilot (Production)
+
+```bash
+# 1. Initialize AWS Copilot
+copilot app init legalizeme-ai
+cd legalizeme-ai
+
+# 2. Deploy to production
+copilot svc deploy --name api --env prod
+
+# 3. Get service URL
+copilot svc show --name api --env prod
 ```
 
-### 2. Document Upload and Analysis
+### Docker (Development)
 
-**Request:**
-```
-POST /api/v1/enhanced/analyze
-Content-Type: multipart/form-data
-
-file: [binary PDF data]
-query: "Is this employment contract compliant with Kenyan law?"
-options: {
-  "detailed_analysis": true,
-  "highlight_issues": true
-}
+```bash
+# Build and run
+docker build -f Dockerfile.ci -t legalizeme-backend .
+docker run -p 8000:8000 -e HUGGINGFACE_API_KEY=$HUGGINGFACE_API_KEY legalizeme-backend
 ```
 
-**Response:**
-```json
-{
-  "document_type": "Employment Contract",
-  "analysis": "This employment contract contains several provisions that may not comply with Kenyan law:",
-  "issues": [
-    {
-      "clause": "Termination Notice (Section 4.2)",
-      "issue": "The 7-day notice period is below the statutory minimum of 1 month for monthly-paid employees",
-      "reference": "Employment Act, Section 35(1)(c)",
-      "recommendation": "Increase notice period to at least 1 month"
-    }
-  ],
-  "compliance_score": 0.68,
-  "highlighted_document": "[Base64 encoded PDF with highlights]"
-}
-```
-
-### 3. Legal Document Drafting
-
-**Request:**
-```json
-POST /api/v1/draft
-Content-Type: application/json
-
-{
-  "document_type": "demand_letter",
-  "parameters": {
-    "sender_name": "John Doe",
-    "recipient_name": "ABC Corporation",
-    "issue": "Unpaid wages for March 2023",
-    "amount_due": "KES 45,000",
-    "payment_deadline": "14 days"
-  },
-  "options": {
-    "format": "docx",
-    "legal_references": true
-  }
-}
-```
-
-**Response:**
-```json
-{
-  "document": "[Base64 encoded DOCX]",
-  "preview_text": "DEMAND LETTER\n\nDated: June 19, 2025\n\nTo: ABC Corporation...",
-  "legal_references": [
-    "Employment Act, Section 17 - Payment of Wages",
-    "Employment Act, Section 85 - Complaints and jurisdiction in cases of dispute"
-  ],
-  "download_url": "/api/v1/documents/temp/demand_letter_20250619_123456.docx"
-}
-```
-
-## Frontend Integration Guide
+## 🔗 API Reference
 
 ### Authentication
+Currently, the API is **open** for development. Production deployments should implement proper authentication.
 
-All API endpoints require authentication using Bearer tokens:
+### Core Endpoints
 
-```javascript
-const headers = {
-  'Authorization': `Bearer ${API_KEY}`,
-  'Content-Type': 'application/json'
-};
+#### `POST /query` - Legal Question Answering
+Submit legal questions and get AI-powered answers.
 
-fetch('https://api.legalizeme.site/api/v1/query', {
-  method: 'POST',
-  headers: headers,
-  body: JSON.stringify({
-    query: "What are the requirements for registering a company in Kenya?"
-  })
-})
-.then(response => response.json())
-.then(data => console.log(data));
-```
+```typescript
+interface QueryRequest {
+  query: string;                    // Legal question
+  model?: string;                   // AI model ("claude-4", "flan-t5", etc.)
+  temperature?: number;             // 0.0-1.0, controls creativity
+  max_tokens?: number;              // Response length limit
+  system_prompt?: string;           // Custom system instructions
+  urls?: string[];                  // Additional web sources
+}
 
-### File Upload Integration
-
-For endpoints that accept file uploads, use multipart/form-data:
-
-```javascript
-const formData = new FormData();
-formData.append('file', documentFile); // File object from input
-formData.append('query', 'Analyze this contract');
-
-const headers = {
-  'Authorization': `Bearer ${API_KEY}`
-};
-
-fetch('https://api.legalizeme.site/api/v1/enhanced/analyze', {
-  method: 'POST',
-  headers: headers,
-  body: formData
-})
-.then(response => response.json())
-.then(data => console.log(data));
-```
-
-### Streaming Responses with MCP Server
-
-For real-time streaming responses, use the WebSocket MCP server:
-
-```javascript
-const ws = new WebSocket('wss://api.legalizeme.site/mcp');
-
-ws.onopen = () => {
-  ws.send(JSON.stringify({
-    type: 'query',
-    payload: {
-      query: 'Explain Kenyan intellectual property law',
-      stream: true
-    }
-  }));
-};
-
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  if (data.type === 'content') {
-    // Append streaming content to UI
-    appendToResponseUI(data.payload.content);
-  } else if (data.type === 'citations') {
-    // Display citations when they arrive
-    displayCitations(data.payload.citations);
-  }
-};
-```
-
-## Error Handling
-
-The API uses standard HTTP status codes:
-- 200 - Success
-- 400 - Bad request (invalid parameters)
-- 401 - Unauthorized (invalid or missing API key)
-- 404 - Resource not found
-- 422 - Validation error (invalid file format, etc.)
-- 500 - Server error
-
-Error responses follow this format:
-
-```json
-{
-  "error": {
-    "code": "invalid_document",
-    "message": "The uploaded file is not a valid legal document",
-    "details": {
-      "accepted_formats": ["pdf", "docx", "txt"],
-      "received_format": "jpg"
-    }
-  }
+interface QueryResponse {
+  response: string;                 // AI-generated answer
+  model_used: string;              // Which model was used
+  confidence_score?: number;        // Response confidence (0-1)
+  citations?: Citation[];          // Legal references
+  error?: string;                  // Error message if any
 }
 ```
 
-## Testing and Development
+#### `POST /summarize` - Document Summarization
+Summarize legal documents or web pages.
 
-For frontend developers testing the integration:
-
-1. Use `test_api.py` for quick API tests
-2. Run `phase3_simple_test.py` for simple end-to-end testing
-3. Use `phase3_comprehensive_test.py` for full system testing
-
-A mock server is available for development without the full backend:
-```bash
-python -m app.api.mock_server
+```typescript
+interface SummarizeRequest {
+  query?: string;                   // Specific focus for summary
+  model?: string;                   // AI model choice
+  urls?: string[];                  // Web pages to summarize
+  // + file upload via multipart/form-data
+}
 ```
 
-This runs on http://localhost:8001 and implements all API endpoints with mock data.
+#### `POST /draft` - Legal Document Drafting
+Generate legal documents based on context.
 
-## Deployment
+```typescript
+interface DraftRequest {
+  document_type: string;            // Type of document to draft
+  context: string;                  // Context and requirements
+  model?: string;                   // AI model choice
+  urls?: string[];                  // Reference materials
+}
+```
 
-The production API is available at:
-- Main API: https://api.legalizeme.site
-- WebSocket: wss://api.legalizeme.site/mcp
+#### `GET /models` - Available AI Models
+List all available AI models and their capabilities.
 
-For staging and testing:
-- Staging API: https://staging-api.legalizeme.site
-- Development API: https://dev-api.legalizeme.site
+```typescript
+interface ModelsResponse {
+  available_models: string[];       // Model names
+  model_details: {                 // Model specifications
+    [key: string]: {
+      context_length: number;
+      max_tokens: number;
+      strengths: string[];
+      use_cases: string[];
+    }
+  };
+  default_model: string;           // Default model name
+}
+```
 
-## License
+## 🧪 Testing
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Run Test Suite
 
-## Acknowledgements
+```bash
+# Full test suite
+python scripts/test_multi_llm.py
 
-- [Kenya Law](https://new.kenyalaw.org/) for providing access to legal information
-- All the open-source projects that make LegalizeMe possible
+# Quick smoke tests
+python scripts/smoke_test_claude.py
+
+# Unit tests
+pytest tests/ -v
+
+# API integration tests
+python -m pytest tests/test_api_integration.py
+```
+
+### Model-Specific Testing
+
+```bash
+# Test Claude 4
+python -c "
+import asyncio
+from app.utils.llm_router import route_model
+result = asyncio.run(route_model('Test query', 'claude-4'))
+print(result)
+"
+
+# Test all models
+python scripts/test_multi_llm.py --comprehensive
+```
+
+## 📊 Performance & Monitoring
+
+### Performance Characteristics
+
+| Metric | Development | Production |
+|--------|-------------|------------|
+| **Cold Start** | ~2-5s | ~1-3s |
+| **Response Time** | ~1-8s | ~0.5-5s |
+| **Concurrent Users** | 10+ | 100+ |
+| **Memory Usage** | 2-4GB | 4-8GB |
+
+### Monitoring
+
+- **Health Check**: `GET /health`
+- **CloudWatch**: AWS metrics and logs
+- **Performance**: Built-in response time tracking
+- **Error Tracking**: Structured logging
+
+## 🔒 Security
+
+### Production Security Features
+
+- ✅ **AWS IAM** integration
+- ✅ **Secrets Manager** for API keys
+- ✅ **VPC private placement**
+- ✅ **HTTPS/TLS** encryption
+- ✅ **Rate limiting** (configurable)
+- ✅ **Input validation** on all endpoints
+
+### Security Headers
+
+```typescript
+// Recommended frontend security headers
+{
+  'Content-Security-Policy': "default-src 'self'",
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin'
+}
+```
+
+## 🤝 Frontend Integration Guide
+
+### React/Next.js Example
+
+```typescript
+// lib/api.ts
+export class LegalizeAPI {
+  constructor(private baseUrl: string) {}
+
+  async query(params: {
+    query: string;
+    model?: string;
+    temperature?: number;
+  }) {
+    const response = await fetch(`${this.baseUrl}/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+    return response.json();
+  }
+
+  async getModels() {
+    const response = await fetch(`${this.baseUrl}/models`);
+    return response.json();
+  }
+}
+
+// Usage in component
+const api = new LegalizeAPI(process.env.NEXT_PUBLIC_API_URL);
+const result = await api.query({
+  query: "What are my rights as an employee in Kenya?",
+  model: "claude-4"
+});
+```
+
+### Error Handling
+
+```typescript
+try {
+  const result = await api.query({ query: "legal question" });
+  if (result.error) {
+    // Handle API errors
+    console.error('API Error:', result.error);
+  }
+} catch (error) {
+  // Handle network errors
+  console.error('Network Error:', error);
+}
+```
+
+### Model Selection UI
+
+```typescript
+// Recommended UI for model selection
+const ModelSelector = () => {
+  const [models, setModels] = useState([]);
+  
+  useEffect(() => {
+    api.getModels().then(data => setModels(data.available_models));
+  }, []);
+
+  return (
+    <select>
+      {models.map(model => (
+        <option key={model} value={model}>
+          {model} {model === 'claude-4' && '(Recommended)'}
+        </option>
+      ))}
+    </select>
+  );
+};
+```
+
+## 📈 Scalability
+
+### Auto-Scaling (AWS Copilot)
+
+- **Min instances**: 1 (dev), 2 (prod)
+- **Max instances**: 3 (dev), 5 (prod)
+- **Scale triggers**: CPU > 70%, Memory > 80%
+
+### Cost Optimization
+
+| Environment | Monthly Cost | Models Used |
+|-------------|--------------|-------------|
+| **Development** | $50-100 | FLAN-T5, Mixtral |
+| **Staging** | $100-200 | Claude 4, FLAN-T5 |
+| **Production** | $300-500+ | All models |
+
+*Note: Costs exclude AWS Bedrock usage (Claude 4) which depends on volume*
+
+## 🛟 Support & Troubleshooting
+
+### Common Issues
+
+#### **Model Access Denied**
+```bash
+# Enable Bedrock access in AWS Console
+aws bedrock list-foundation-models --region us-east-1
+```
+
+#### **High Latency**
+- Use FLAN-T5 for development/testing
+- Enable response caching (included)
+- Check CloudWatch metrics
+
+#### **Memory Issues**
+- Increase container memory in `copilot/api/manifest.yml`
+- Use 4-bit quantization (already configured)
+
+### Support Channels
+
+- 🐛 **Issues**: [GitHub Issues](https://github.com/joshuarebo/legalizeme-agent-rag-v1/issues)
+- 📚 **Documentation**: [Multi-LLM Implementation Guide](./MULTI_LLM_IMPLEMENTATION.md)
+- 🚀 **Deployment**: [Copilot Guide](./copilot/README.md)
+
+## 🤖 AI Model Details
+
+### Model Routing Logic
+
+The system automatically selects the best model based on:
+- **Query complexity** (simple → FLAN-T5, complex → Claude 4)
+- **Language** (multilingual → Hunyuan A13B)
+- **Cost optimization** (development → lighter models)
+- **Fallback chain** (primary fails → backup models)
+
+### Model Capabilities
+
+```python
+# Model strengths and use cases
+MODEL_CAPABILITIES = {
+    "claude-4": {
+        "strengths": ["reasoning", "analysis", "safety", "long_context"],
+        "best_for": ["complex_legal_analysis", "document_review", "ethical_reasoning"]
+    },
+    "hunyuan-a13b": {
+        "strengths": ["multilingual", "reasoning", "efficiency"],
+        "best_for": ["multilingual_legal", "chinese_law", "cost_optimization"]
+    },
+    "flan-t5": {
+        "strengths": ["instruction_following", "summarization", "speed"],
+        "best_for": ["development", "simple_qa", "classification"]
+    }
+}
+```
+
+## 📋 Changelog
+
+### v2.0.0 - Multi-LLM Implementation
+- ✅ Added 6 AI model support with intelligent routing
+- ✅ Integrated Claude 4 via Amazon Bedrock
+- ✅ Added Hunyuan A13B with quantization
+- ✅ Enhanced API with model selection
+- ✅ Complete AWS Copilot deployment
+- ✅ Comprehensive testing suite
+
+### v1.0.0 - Initial Release
+- ✅ FastAPI backend with legal document processing
+- ✅ Basic LLM integration
+- ✅ Document parsing and RAG
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+**Built with ❤️ for the Kenyan legal community**  
+*Empowering legal professionals with AI-driven insights and document automation*
