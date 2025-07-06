@@ -24,8 +24,18 @@ try:
         from langchain_community.llms.huggingface_hub import HuggingFaceHub
         USING_HUGGINGFACE_ENDPOINT = False
     
-    from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-    import torch
+    try:
+        from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+        import torch
+        HEAVY_DEPENDENCIES_AVAILABLE = True
+    except ImportError:
+        # Heavy ML dependencies not available
+        AutoTokenizer = None
+        AutoModelForCausalLM = None
+        pipeline = None
+        torch = None
+        HEAVY_DEPENDENCIES_AVAILABLE = False
+    
     USING_LANGCHAIN_COMMUNITY = True
 except ImportError:
     # Fall back to old imports for backward compatibility
@@ -36,6 +46,7 @@ except ImportError:
         from langchain.llms.base import BaseLLM
         USING_LANGCHAIN_COMMUNITY = False
         USING_HUGGINGFACE_ENDPOINT = False
+        HEAVY_DEPENDENCIES_AVAILABLE = False
     except ImportError:
         # If still not found, we'll use our own implementations
         BaseLLM = object
@@ -44,6 +55,7 @@ except ImportError:
         FakeListLLM = None
         USING_LANGCHAIN_COMMUNITY = False
         USING_HUGGINGFACE_ENDPOINT = False
+        HEAVY_DEPENDENCIES_AVAILABLE = False
 
 from app.utils.logger import get_logger
 
@@ -437,8 +449,9 @@ def get_mixtral_llm() -> Any:
         Mixtral LLM instance
     """
     try:
-        from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-        import torch
+        if not HEAVY_DEPENDENCIES_AVAILABLE:
+            logger.warning("Heavy ML dependencies not available - using stub LLM for Mixtral")
+            return get_enhanced_fake_llm()
         
         # Set cache directory
         cache_dir = os.getenv("MODEL_CACHE_DIR", "./data/model_cache")
@@ -502,8 +515,9 @@ def get_llama_llm() -> Any:
         LLaMA 3 LLM instance
     """
     try:
-        from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-        import torch
+        if not HEAVY_DEPENDENCIES_AVAILABLE:
+            logger.warning("Heavy ML dependencies not available - using stub LLM for LLaMA")
+            return get_enhanced_fake_llm()
         
         # Set cache directory
         cache_dir = os.getenv("MODEL_CACHE_DIR", "./data/model_cache")
@@ -567,8 +581,9 @@ def get_minimax_llm() -> Any:
         MiniMax-01 LLM instance
     """
     try:
-        from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-        import torch
+        if not HEAVY_DEPENDENCIES_AVAILABLE:
+            logger.warning("Heavy ML dependencies not available - using stub LLM for MiniMax")
+            return get_enhanced_fake_llm()
         
         # Set cache directory
         cache_dir = os.getenv("MODEL_CACHE_DIR", "./data/model_cache")
@@ -622,7 +637,7 @@ def get_minimax_llm() -> Any:
         logger.warning("Falling back to fake LLM")
         
         # Return a fake LLM for development or when resources are constrained
-        return get_fake_llm()
+        return get_enhanced_fake_llm()
 
 def get_flan_t5_llm() -> Any:
     """
@@ -632,8 +647,9 @@ def get_flan_t5_llm() -> Any:
         FLAN-T5 LLM instance
     """
     try:
-        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
-        import torch
+        if not HEAVY_DEPENDENCIES_AVAILABLE:
+            logger.warning("Heavy ML dependencies not available - using stub LLM for FLAN-T5")
+            return get_enhanced_fake_llm()
         
         # Set cache directory
         cache_dir = os.getenv("MODEL_CACHE_DIR", "./data/model_cache")
@@ -833,8 +849,8 @@ def get_huggingface_hub_llm(model_name: str = "mistral-7b-instruct") -> Any:
                     hf_llm = FakeListLLM(responses=["Legal analysis for your query: This is a simulated response."])
             except Exception as e:
                 logger.error(f"Error initializing HuggingFaceEndpoint: {str(e)}")
-                # Fall back to the older implementation or simulation
-                return get_fake_llm()
+                        # Fall back to the older implementation or simulation
+        return get_enhanced_fake_llm()
         else:
             # Fall back to the older HuggingFaceHub class
             hf_llm = HuggingFaceHub(
@@ -848,7 +864,7 @@ def get_huggingface_hub_llm(model_name: str = "mistral-7b-instruct") -> Any:
         
     except Exception as e:
         logger.error(f"Error initializing HuggingFace Hub LLM: {str(e)}")
-        return get_fake_llm()
+        return get_enhanced_fake_llm()
 
 def get_legal_specialized_llm(use_case: str = "legal_reasoning") -> Any:
     """
@@ -882,7 +898,7 @@ def get_legal_specialized_llm(use_case: str = "legal_reasoning") -> Any:
     
     # Final fallback
     logger.warning(f"All specialized models failed for {use_case}, using fallback")
-    return get_fallback_llm()
+    return get_enhanced_fake_llm()
 
 def create_legal_prompt(prompt_type: str, **kwargs) -> str:
     """
@@ -941,11 +957,11 @@ def get_enhanced_llm(llm_type: str = "huggingface", use_case: str = "legal_reaso
         # Final fallback
         if llm is None:
             logger.warning("All LLM initialization attempts failed, using fake LLM")
-            llm = get_fake_llm()
+            llm = get_enhanced_fake_llm()
         
         # Wrap with caching
         return CachingLLM(llm=llm, cache_enabled=True)
     
     except Exception as e:
         logger.error(f"Error in enhanced LLM initialization: {str(e)}")
-        return CachingLLM(llm=get_fake_llm(), cache_enabled=True)
+        return CachingLLM(llm=get_enhanced_fake_llm(), cache_enabled=True)
