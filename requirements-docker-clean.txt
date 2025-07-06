@@ -35,7 +35,7 @@ requests==2.31.0
 # LangChain Core (without heavy dependencies)
 langchain-core==0.1.23
 langchain-text-splitters==0.0.1
-langgraph==0.0.19
+langgraph==0.2.20
 
 # Redis client
 redis==5.0.1
