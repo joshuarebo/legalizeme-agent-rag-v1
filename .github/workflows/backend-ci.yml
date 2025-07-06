@@ -39,11 +39,32 @@ jobs:
         env:
           HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
         run: |
+          # Run container
           docker run -d --name backend -e HUGGINGFACE_API_KEY=$HUGGINGFACE_API_KEY -p 8000:8000 legalizeme-backend
-          # wait for API up
-          sleep 30
-          curl --fail http://localhost:8000/docs > /dev/null
+          
+          echo "Waiting for container to start..."
+          docker ps
           docker logs backend --tail 50
+          
+          # Health check with retries
+          max_retries=10
+          retry_count=0
+          until curl -s -f http://localhost:8000/health > /dev/null || [ $retry_count -eq $max_retries ]
+          do
+            echo "Attempt $((retry_count+1))/$max_retries: Waiting for API to be ready..."
+            sleep 10
+            retry_count=$((retry_count+1))
+            docker logs backend --tail 20
+          done
+          
+          if [ $retry_count -eq $max_retries ]; then
+            echo "Error: API failed to start after $max_retries attempts"
+            docker logs backend
+            exit 1
+          fi
+          
+          echo "API is ready!"
+          curl -v http://localhost:8000/health
 
       - name: Cleanup
         if: always()
