@@ -1,8 +1,14 @@
 FROM python:3.11-slim
 
-# Reduce pip verbosity and avoid permission issues
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_ROOT_USER_ACTION=ignore
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    POETRY_VERSION=1.6.1 \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_CREATE=false
 
 WORKDIR /app
 
@@ -18,7 +24,6 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libopenblas-dev \
     libomp-dev \
-    build-essential \
     git \
     curl \
     software-properties-common \
@@ -33,7 +38,6 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     libxml2 \
     libxslt1.1 \
-    # Additional dependencies for Hunyuan and quantization
     cmake \
     ninja-build \
     && rm -rf /var/lib/apt/lists/*
@@ -41,11 +45,16 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements files
 COPY requirements-docker-clean.txt ./requirements.txt
 
-# Upgrade pip and install dependencies with better error handling
-RUN pip install --upgrade pip setuptools wheel && \
-    # Install langgraph and its dependencies first
-    pip install --no-cache-dir "langgraph>=0.2.20" && \
-    # Then install the rest of the requirements
+# Install Python dependencies in the correct order
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    # Install base dependencies that langgraph needs
+    pip install --no-cache-dir \
+        "networkx>=3.0" \
+        "typing-extensions>=4.5.0" \
+        "pydantic>=2.0.0" && \
+    # Install langgraph and its dependencies
+    pip install --no-cache-dir "langgraph==0.2.20" && \
+    # Install the rest of the requirements
     pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
