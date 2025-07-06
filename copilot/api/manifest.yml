@@ -11,8 +11,10 @@ image:
 
 # Port to expose for health checks and load balancer
 http:
-  path: '/'
+  path: '/counsel'
   healthcheck: '/health'
+  alias: 'www.legalizeme.site'
+  certificate_arn: '${COPILOT_APPLICATION_NAME}.certificates.legalizeme_ssl'
 
 # Environment variables for the service
 variables:
