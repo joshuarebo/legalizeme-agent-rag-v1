@@ -17,36 +17,25 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements-docker-clean.txt /tmp/requirements.txt
+# Copy application code first (we need our stubs)
+COPY . /app
 
 # Install Python dependencies with explicit upgrade of pip and debug output
 RUN pip install --no-cache-dir --upgrade pip && \
-    # Force uninstall langgraph if it exists
-    pip uninstall -y langgraph || true && \
-    # Install langgraph directly from PyPI with verbose output
-    pip install --no-cache-dir --verbose langgraph==0.2.20 && \
-    # Verify langgraph installation
-    python -c "import langgraph; print(f'LangGraph version: {langgraph.__version__}')" && \
     # Install remaining requirements with verbose output
-    pip install --no-cache-dir --verbose -r /tmp/requirements.txt && \
-    # Force reinstall langgraph to ensure it's not overwritten
-    pip install --no-cache-dir --force-reinstall --verbose langgraph==0.2.20 && \
+    pip install --no-cache-dir --verbose -r /tmp/requirements-docker-clean.txt && \
     # Debug output
     echo "Installed packages:" && \
     pip list && \
     echo "Python path:" && \
     python -c "import sys; print('\n'.join(sys.path))" && \
-    echo "Testing langgraph import:" && \
-    python -c "from langgraph.graph import StateGraph, END; print('✅ LangGraph import successful')" && \
+    echo "Testing imports:" && \
+    python -c "from app.utils.stubs.langgraph.graph import StateGraph, END; print('✅ Stub langgraph import successful')" && \
     # List all files in site-packages
     echo "Contents of site-packages:" && \
     ls -la /usr/local/lib/python3.11/site-packages/ && \
-    echo "Contents of langgraph directory:" && \
-    ls -la /usr/local/lib/python3.11/site-packages/langgraph*
-
-# Copy application code
-COPY . /app
+    echo "Contents of app directory:" && \
+    ls -la /app/app/utils/stubs/langgraph/
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
@@ -61,18 +50,14 @@ USER app
 # Verify imports again after user switch and show detailed debug info
 RUN echo "Testing imports as app user:" && \
     python -c "import sys; print('Python path:'); print('\n'.join(sys.path))" && \
-    python -c "import langgraph; print(f'LangGraph version: {langgraph.__version__}')" && \
-    python -c "from langgraph.graph import StateGraph, END; print('✅ LangGraph import successful as app user')" && \
-    python -c "import app.agents.counsel_agent; print('✅ Counsel agent import successful')" && \
-    # Show permissions of site-packages
-    ls -la /usr/local/lib/python3.11/site-packages/langgraph* || true
+    python -c "from app.utils.stubs.langgraph.graph import StateGraph, END; print('✅ Stub langgraph import successful as app user')" && \
+    python -c "import app.agents.counsel_agent; print('✅ Counsel agent import successful')"
 
 # Add a startup script to verify imports before running uvicorn
 COPY <<'EOF' /app/start.sh
 #!/bin/bash
 echo "Verifying imports before starting server..."
-python -c "import langgraph; print(f'LangGraph version: {langgraph.__version__}')"
-python -c "from langgraph.graph import StateGraph, END"
+python -c "from app.utils.stubs.langgraph.graph import StateGraph, END"
 python -c "import app.agents.counsel_agent"
 echo "All imports verified successfully, starting server..."
 exec uvicorn app.api.main:app --host 0.0.0.0 --port 8000
