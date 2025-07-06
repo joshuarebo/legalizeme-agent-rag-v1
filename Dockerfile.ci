@@ -23,7 +23,7 @@ COPY . /app
 # Install Python dependencies with explicit upgrade of pip and debug output
 RUN pip install --no-cache-dir --upgrade pip && \
     # Install remaining requirements with verbose output
-    pip install --no-cache-dir --verbose -r /tmp/requirements-docker-clean.txt && \
+    pip install --no-cache-dir --verbose -r requirements-docker-clean.txt && \
     # Debug output
     echo "Installed packages:" && \
     pip list && \
