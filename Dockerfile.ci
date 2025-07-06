@@ -15,17 +15,12 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install core dependencies first
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
-    langgraph>=0.2.0 \
-    langchain>=0.1.0 \
-    langchain-core>=0.1.0 \
-    langchain-community>=0.0.1
-
-# Copy requirements and install other dependencies
+# Copy requirements first for better caching
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Install Python dependencies with explicit upgrade of pip
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Copy application code
 COPY . /app
