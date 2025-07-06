@@ -17,6 +17,7 @@ from app.parsers.web_parser import WebParser
 from app.utils.llm_factory import get_llm, get_fallback_llm
 from app.utils.prompts import SYSTEM_PROMPT, INSTRUCTION_TEMPLATE
 from app.utils.logger import get_logger
+from app.utils.llm_router import get_router
 
 logger = get_logger(__name__)
 
@@ -38,7 +39,11 @@ class AgentState(BaseModel):
     legal_issues: List[str] = []
     legal_rules: List[Dict[str, str]] = []
     legal_conclusion: Optional[str] = None
-    confidence_score: Optional[float] = None
+    # Model selection parameters
+    model_choice: Optional[str] = "flan-t5"
+    temperature: Optional[float] = 0.3
+    max_tokens: Optional[int] = 2048
+    system_prompt: Optional[str] = None
     
 
 class CounselAgent:
@@ -535,12 +540,15 @@ class CounselAgent:
             logger.error(f"Error in legal reasoning: {str(e)}")
             return state
     async def _llm_executor(self, state: AgentState) -> AgentState:
-        """Execute the primary LLM to generate a response with structured reasoning."""
-        logger.info("Executing primary LLM with structured reasoning")
+        """Execute the selected LLM to generate a response with structured reasoning."""
+        logger.info(f"Executing {state.model_choice} LLM with structured reasoning")
         
         try:
+            # Get the router
+            router = get_router()
+            
             # Prepare a more structured prompt for legal reasoning
-            system_prompt = SYSTEM_PROMPT
+            system_prompt = state.system_prompt or SYSTEM_PROMPT
             
             # Add structured reasoning instructions
             reasoning_instructions = """
@@ -559,10 +567,17 @@ class CounselAgent:
             """
             
             # Prepare the prompt
-            prompt = f"{system_prompt}\n\n{reasoning_instructions}\n\nQuery: {state.query}\n\nContext:\n{state.context}"
+            prompt = f"Query: {state.query}\n\nContext:\n{state.context}"
+            full_system_prompt = f"{system_prompt}\n\n{reasoning_instructions}"
             
-            # Call the LLM
-            response = await self.primary_llm.invoke(prompt)
+            # Call the LLM via router
+            response = await router.route_model(
+                prompt=prompt,
+                model_choice=state.model_choice,
+                temperature=state.temperature,
+                max_tokens=state.max_tokens,
+                system_prompt=full_system_prompt
+            )
             
             # Extract reasoning trace and citations if possible
             response_text, reasoning, citations = self._extract_response_components(response)
@@ -580,9 +595,9 @@ class CounselAgent:
             # Add confidence scoring
             state.confidence_score = self._calculate_confidence(response_text, reasoning, state.citations)
             
-            logger.info("Primary LLM executed successfully with structured reasoning")
+            logger.info(f"{state.model_choice} LLM executed successfully with structured reasoning")
         except Exception as e:
-            logger.error(f"Error executing primary LLM: {str(e)}")
+            logger.error(f"Error executing {state.model_choice} LLM: {str(e)}")
             state.error = f"LLM execution error: {str(e)}"
             state.use_fallback = True
         

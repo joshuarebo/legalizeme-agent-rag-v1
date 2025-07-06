@@ -20,6 +20,7 @@ from app.crawlers.scheduler import CrawlerScheduler
 from app.optimization.performance_optimizer import PerformanceOptimizer
 from app.api import crawler as crawler_router
 from app.api import performance as performance_router
+from app.utils.llm_router import get_router
 
 app = FastAPI(
     title="Counsel API",
@@ -67,15 +68,25 @@ async def add_performance_tracking(request: Request, call_next):
 class QueryRequest(BaseModel):
     query: str
     urls: Optional[List[HttpUrl]] = None
+    model: Optional[str] = "flan-t5"  # Default to flan-t5 as specified
+    temperature: Optional[float] = 0.3
+    max_tokens: Optional[int] = 2048
+    system_prompt: Optional[str] = None
 
 class SummarizeRequest(BaseModel):
     urls: Optional[List[HttpUrl]] = None
     query: Optional[str] = None
+    model: Optional[str] = "flan-t5"  # Default to flan-t5 as specified
+    temperature: Optional[float] = 0.3
+    max_tokens: Optional[int] = 2048
 
 class DraftRequest(BaseModel):
     document_type: str
     context: str
     urls: Optional[List[HttpUrl]] = None
+    model: Optional[str] = "flan-t5"  # Default to flan-t5 as specified
+    temperature: Optional[float] = 0.3
+    max_tokens: Optional[int] = 2048
 
 @app.get("/")
 async def root():
@@ -90,26 +101,46 @@ async def root():
 async def query(
     query_data: Optional[QueryRequest] = None,
     query_text: Optional[str] = Form(None),
+    model: Optional[str] = Form("flan-t5"),
+    temperature: Optional[float] = Form(0.3),
+    max_tokens: Optional[int] = Form(2048),
     files: List[UploadFile] = File(None),
 ):
-    """Handle legal questions with optional files/links."""
+    """Handle legal questions with optional files/links and model selection."""
     # Debug info
     print(f"query_data: {query_data}")
     print(f"query_text: {query_text}")
+    print(f"model: {model}")
     print(f"files: {files}")
     
-    # Get query from either form or JSON
+    # Get parameters from either form or JSON
     query = query_text if query_text else (query_data.query if query_data else None)
     urls = query_data.urls if query_data else []
+    
+    # Get model parameters
+    if query_data:
+        model_choice = query_data.model or model
+        temp = query_data.temperature or temperature
+        max_tok = query_data.max_tokens or max_tokens
+        sys_prompt = query_data.system_prompt
+    else:
+        model_choice = model
+        temp = temperature
+        max_tok = max_tokens
+        sys_prompt = None
     
     if not query:
         raise HTTPException(status_code=400, detail="Query is required")
     
-    # Process the query through our agent
+    # Process the query through our agent with model selection
     response = await counsel_agent.run_query(
         query=query,
         files=files,
         urls=urls,
+        model=model_choice,
+        temperature=temp,
+        max_tokens=max_tok,
+        system_prompt=sys_prompt,
     )
     
     return response
@@ -118,21 +149,37 @@ async def query(
 async def summarize(
     summarize_data: Optional[SummarizeRequest] = None,
     query_text: Optional[str] = Form(None),
+    model: Optional[str] = Form("flan-t5"),
+    temperature: Optional[float] = Form(0.3),
+    max_tokens: Optional[int] = Form(2048),
     files: List[UploadFile] = File(None),
 ):
-    """Summarize documents or web pages."""
-    # Get query from either form or JSON
+    """Summarize documents or web pages with model selection."""
+    # Get parameters from either form or JSON
     query = query_text if query_text else (summarize_data.query if summarize_data else "")
     urls = summarize_data.urls if summarize_data else []
+    
+    # Get model parameters
+    if summarize_data:
+        model_choice = summarize_data.model or model
+        temp = summarize_data.temperature or temperature
+        max_tok = summarize_data.max_tokens or max_tokens
+    else:
+        model_choice = model
+        temp = temperature
+        max_tok = max_tokens
     
     if not files and not urls:
         raise HTTPException(status_code=400, detail="At least one file or URL is required")
     
-    # Process through our agent
+    # Process through our agent with model selection
     response = await counsel_agent.run_summarize(
         query=query,
         files=files,
         urls=urls,
+        model=model_choice,
+        temperature=temp,
+        max_tokens=max_tok,
     )
     
     return response
@@ -142,19 +189,33 @@ async def draft(
     draft_data: DraftRequest,
     files: List[UploadFile] = File(None),
 ):
-    """Draft legal documents based on context and type."""
+    """Draft legal documents based on context and type with model selection."""
     if not draft_data.document_type or not draft_data.context:
         raise HTTPException(status_code=400, detail="Document type and context are required")
     
-    # Process through our agent
+    # Process through our agent with model selection
     response = await counsel_agent.run_draft(
         document_type=draft_data.document_type,
         context=draft_data.context,
         files=files,
         urls=draft_data.urls,
+        model=draft_data.model,
+        temperature=draft_data.temperature,
+        max_tokens=draft_data.max_tokens,
     )
     
     return response
+
+@app.get("/models")
+async def list_models():
+    """List available models and their information."""
+    router = get_router()
+    models = router.get_all_models_info()
+    return {
+        "available_models": router.get_supported_models(),
+        "model_details": models,
+        "default_model": "flan-t5"
+    }
 
 @app.get("/health")
 async def health_check():

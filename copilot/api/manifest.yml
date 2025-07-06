@@ -1,0 +1,161 @@
+# The manifest for the "api" service.
+# Read the full specification for the "Backend Service" type at:
+# https://aws.github.io/copilot-cli/docs/manifest/backend-service/
+
+name: api
+type: Backend Service
+
+# Configurations for the container and service.
+image:
+  build: './Dockerfile.ci'
+
+# Port to expose for health checks and load balancer
+http:
+  path: '/'
+  healthcheck: '/health'
+
+# Environment variables for the service
+variables:
+  API_HOST: '0.0.0.0'
+  API_PORT: '8000'
+  DEBUG_MODE: 'false'
+  ENABLE_OPTIMIZATION: 'true'
+  ENABLE_CRAWLER: 'true'
+  PRIMARY_LLM_TYPE: 'claude-4'
+  DEFAULT_MODEL: 'flan-t5'
+  MODEL_CACHE_DIR: '/tmp/model_cache'
+  CACHE_DIR: '/tmp/cache'
+
+# Secrets to inject into the container (AWS Secrets Manager)
+secrets:
+  - HUGGINGFACE_API_KEY
+  - OPENAI_API_KEY  # Optional for future use
+
+# Resource allocation
+cpu: 1024       # 1 vCPU
+memory: 2048    # 2 GB RAM
+
+# Auto scaling configuration
+count:
+  min: 1
+  max: 3
+  scale_in_cooldown: 300s   # 5 minutes
+  scale_out_cooldown: 60s   # 1 minute
+  target_cpu: 70
+  target_memory: 80
+
+# Network configuration
+network:
+  vpc:
+    enable_logs: true
+    placement: 'private'
+
+# Task role permissions for AWS services
+task_role:
+  policy:
+    statements:
+      # Amazon Bedrock permissions for Claude 4
+      - effect: allow
+        actions:
+          - bedrock:InvokeModel
+          - bedrock:InvokeModelWithResponseStream
+          - bedrock:GetFoundationModel
+          - bedrock:ListFoundationModels
+        resources: "*"
+      
+      # CloudWatch Logs permissions
+      - effect: allow
+        actions:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - logs:DescribeLogStreams
+          - logs:DescribeLogGroups
+        resources: "*"
+      
+      # S3 permissions for model caching and document storage
+      - effect: allow
+        actions:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          - s3:ListBucket
+        resources:
+          - "arn:aws:s3:::counsel-ai-cache/*"
+          - "arn:aws:s3:::counsel-ai-documents/*"
+      
+      # Systems Manager Parameter Store for configuration
+      - effect: allow
+        actions:
+          - ssm:GetParameter
+          - ssm:GetParameters
+          - ssm:GetParametersByPath
+        resources:
+          - "arn:aws:ssm:*:*:parameter/counsel/*"
+
+# Logging configuration
+logging:
+  enable_metadata: true
+
+# Health check configuration
+exec: true
+command: []
+
+# Environment-specific overrides
+environments:
+  development:
+    variables:
+      DEBUG_MODE: 'true'
+      PRIMARY_LLM_TYPE: 'flan-t5'  # Use lighter model for dev
+    cpu: 512
+    memory: 1024
+    count:
+      min: 1
+      max: 1
+  
+  staging:
+    variables:
+      DEBUG_MODE: 'false'
+      PRIMARY_LLM_TYPE: 'claude-4'
+    cpu: 1024
+    memory: 2048
+    count:
+      min: 1
+      max: 2
+  
+  production:
+    variables:
+      DEBUG_MODE: 'false'
+      PRIMARY_LLM_TYPE: 'claude-4'
+      ENABLE_OPTIMIZATION: 'true'
+    cpu: 2048
+    memory: 4096
+    count:
+      min: 2
+      max: 5
+    task_role:
+      policy:
+        statements:
+          # Production-specific enhanced permissions
+          - effect: allow
+            actions:
+              - bedrock:InvokeModel
+              - bedrock:InvokeModelWithResponseStream
+              - bedrock:GetFoundationModel
+              - bedrock:ListFoundationModels
+              - bedrock:GetModelInvocationLoggingConfiguration
+            resources: "*"
+          
+          # Enhanced S3 permissions for production
+          - effect: allow
+            actions:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:GetBucketLocation
+              - s3:GetObjectVersion
+            resources:
+              - "arn:aws:s3:::counsel-ai-prod-cache/*"
+              - "arn:aws:s3:::counsel-ai-prod-documents/*"
+              - "arn:aws:s3:::counsel-ai-prod-models/*"

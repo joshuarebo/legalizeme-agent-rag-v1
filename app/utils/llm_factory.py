@@ -372,7 +372,7 @@ def get_llm(llm_type: str = "mixtral") -> Any:
     Get an LLM instance based on the specified type.
     
     Args:
-        llm_type: Type of LLM to get (mixtral, llama, minimax)
+        llm_type: Type of LLM to get (mixtral, llama, minimax, flan-t5)
         
     Returns:
         An LLM instance wrapped with caching
@@ -387,6 +387,8 @@ def get_llm(llm_type: str = "mixtral") -> Any:
             llm = get_llama_llm()
         elif llm_type.lower() == "minimax":
             llm = get_minimax_llm()
+        elif llm_type.lower() == "flan-t5":
+            llm = get_flan_t5_llm()
         else:
             logger.warning(f"Unknown LLM type: {llm_type}, falling back to mixtral")
             llm = get_mixtral_llm()
@@ -621,6 +623,70 @@ def get_minimax_llm() -> Any:
         
         # Return a fake LLM for development or when resources are constrained
         return get_fake_llm()
+
+def get_flan_t5_llm() -> Any:
+    """
+    Initialize a FLAN-T5 LLM for instruction following and summarization.
+    
+    Returns:
+        FLAN-T5 LLM instance
+    """
+    try:
+        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
+        import torch
+        
+        # Set cache directory
+        cache_dir = os.getenv("MODEL_CACHE_DIR", "./data/model_cache")
+        os.makedirs(cache_dir, exist_ok=True)
+        
+        logger.info("Initializing FLAN-T5 model")
+        
+        # Use FLAN-T5 base model for efficiency
+        model_name = "google/flan-t5-base"
+        
+        # Check if CUDA is available
+        device_map = "auto" if torch.cuda.is_available() else "cpu"
+        logger.info(f"Using device map: {device_map}")
+        
+        # Set logging level temporarily to avoid verbose output
+        transformers_logger = logging.getLogger("transformers")
+        prev_level = transformers_logger.level
+        transformers_logger.setLevel(logging.ERROR)
+        
+        try:
+            # Initialize FLAN-T5 model and tokenizer
+            model = AutoModelForSeq2SeqLM.from_pretrained(
+                model_name,
+                torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+                device_map=device_map,
+                cache_dir=cache_dir,
+                low_cpu_mem_usage=True
+            )
+            
+            tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+        finally:
+            # Restore previous logging level
+            transformers_logger.setLevel(prev_level)
+        
+        # Create pipeline for text generation
+        hf_pipeline = pipeline(
+            "text2text-generation",
+            model=model,
+            tokenizer=tokenizer,
+            max_length=512,
+            temperature=0.3,
+            do_sample=True,
+            top_p=0.9,
+            repetition_penalty=1.1
+        )
+        
+        # Wrap in LangChain
+        return HuggingFacePipeline(pipeline=hf_pipeline)
+    
+    except Exception as e:
+        logger.error(f"Error initializing FLAN-T5 model: {str(e)}")
+        logger.warning("Falling back to enhanced fake LLM")
+        return get_enhanced_fake_llm()
 
 def get_enhanced_fake_llm() -> Any:
     """
