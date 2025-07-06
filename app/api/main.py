@@ -10,12 +10,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 import uvicorn
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables
 load_dotenv()
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Import our LangGraph agent
-from app.agents.counsel_agent import CounselAgent
+try:
+    from app.agents.counsel_agent import CounselAgent
+    logger.info("✅ LangGraph dependencies loaded successfully")
+except ImportError as e:
+    logger.error(f"❌ Failed to import LangGraph dependencies: {e}")
+    logger.error("💡 Ensure langgraph is installed: pip install langgraph>=0.2.0")
+    raise
+
 from app.crawlers.scheduler import CrawlerScheduler
 from app.optimization.performance_optimizer import PerformanceOptimizer
 from app.api import crawler as crawler_router

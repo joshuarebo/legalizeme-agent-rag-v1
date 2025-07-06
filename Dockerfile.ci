@@ -1,69 +1,41 @@
 FROM python:3.11-slim
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_DEFAULT_TIMEOUT=100 \
-    POETRY_VERSION=1.6.1 \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
 
-# Install system dependencies needed for common AI and document libraries
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
+    curl \
     build-essential \
     python3-dev \
-    libxml2-dev \
-    libxslt1-dev \
-    zlib1g-dev \
-    libjpeg-dev \
-    libffi-dev \
-    libssl-dev \
-    libopenblas-dev \
-    libomp-dev \
-    git \
-    curl \
-    software-properties-common \
-    poppler-utils \
-    tesseract-ocr \
-    libtesseract-dev \
-    libmagic-dev \
-    libgl1 \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libxml2 \
-    libxslt1.1 \
-    cmake \
-    ninja-build \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements files
-COPY requirements-docker-clean.txt ./requirements.txt
-
-# Install Python dependencies in the correct order
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    # Install base dependencies that langgraph needs
+# Install core dependencies first
+RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
-        "networkx>=3.0" \
-        "typing-extensions>=4.5.0" \
-        "pydantic>=2.0.0" && \
-    # Install langgraph and its dependencies
-    pip install --no-cache-dir "langgraph==0.2.20" && \
-    # Install the rest of the requirements
-    pip install --no-cache-dir -r requirements.txt
+    langgraph>=0.2.0 \
+    langchain>=0.1.0 \
+    langchain-core>=0.1.0 \
+    langchain-community>=0.0.1
 
-# Copy the rest of the application code
-COPY . .
+# Copy requirements and install other dependencies
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-EXPOSE 8000
+# Copy application code
+COPY . /app
 
-# Add healthcheck
-HEALTHCHECK --interval=5s --timeout=3s --start-period=30s --retries=3 \
+# Add health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash app
+USER app
 
 CMD ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

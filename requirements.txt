@@ -6,10 +6,10 @@ python-multipart==0.0.9
 python-dotenv==1.0.1
 
 # LangGraph and Agent Components
-langgraph==0.2.20
-# smol-agent==0.0.2  # removed; stub used instead
-langchain==0.1.8
-langchain-community==0.0.21
+langgraph>=0.2.0
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-community>=0.0.1
 haystack-ai==2.0.0
 llama-index==0.10.11
 llama-index-llms==0.1.5
