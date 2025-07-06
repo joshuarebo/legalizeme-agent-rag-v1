@@ -8,8 +8,12 @@ from typing import Dict, List, Optional, Any, Tuple
 from fastapi import UploadFile
 from pydantic import HttpUrl, BaseModel
 import httpx
-# Use our stub implementation
-from app.utils.stubs.langgraph import StateGraph, END
+
+# Try to import the real langgraph first; fall back to internal stub if unavailable
+try:
+    from langgraph.graph import StateGraph, END  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    from app.utils.stubs.langgraph.graph import StateGraph, END
 
 # Import our custom components
 from app.rag.retriever import KenyaLawRetriever
