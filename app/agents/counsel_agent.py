@@ -8,7 +8,8 @@ from typing import Dict, List, Optional, Any, Tuple
 from fastapi import UploadFile
 from pydantic import HttpUrl, BaseModel
 import httpx
-from langgraph.graph import StateGraph, END
+# Use our stub implementation
+from app.utils.stubs.langgraph import StateGraph, END
 
 # Import our custom components
 from app.rag.retriever import KenyaLawRetriever

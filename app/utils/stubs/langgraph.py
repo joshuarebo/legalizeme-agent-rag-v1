@@ -1,66 +1,61 @@
-# Stub implementation for langgraph
-import sys
+"""
+Temporary stub implementation of langgraph to get the container running
+"""
+from typing import Any, Dict, List, Optional, Callable, Union
 
-# Define the main components as attributes of this module
+class END:
+    """Stub for END marker"""
+    pass
+
 class StateGraph:
-    def __init__(self, *args, **kwargs):
+    """
+    Stub implementation of StateGraph that mimics the basic functionality
+    """
+    def __init__(self, state_type: Any):
+        self.state_type = state_type
         self.nodes = {}
         self.edges = {}
         self.conditional_edges = {}
         self.entry_point = None
-    
-    def add_node(self, node_name, node_func):
-        self.nodes[node_name] = node_func
-        return self
-    
-    def add_edge(self, start_node, end_node):
-        if start_node not in self.edges:
-            self.edges[start_node] = []
-        self.edges[start_node].append(end_node)
-        return self
-    
-    def add_conditional_edges(self, source, condition_func, destinations):
-        self.conditional_edges[source] = (condition_func, destinations)
-        return self
-    
-    def set_entry_point(self, entry_point):
-        self.entry_point = entry_point
-        return self
-    
-    def compile(self, *args, **kwargs):
-        return self
-    
-    async def ainvoke(self, state, *args, **kwargs):
-        # Simply return a modified state with a fake response
-        if hasattr(state, 'query'):
-            state.response = f"Simulated response for: {state.query}"
-        else:
-            state.response = "Simulated response"
-        
-        state.error = None
+
+    def add_node(self, name: str, handler: Callable) -> None:
+        """Add a node to the graph"""
+        self.nodes[name] = handler
+
+    def add_edge(self, from_node: str, to_node: Union[str, Callable, END]) -> None:
+        """Add an edge between nodes"""
+        self.edges[from_node] = to_node
+
+    def add_conditional_edges(self, from_node: str, condition: Callable, edges: Dict[Any, str]) -> None:
+        """Add conditional edges from a node"""
+        self.conditional_edges[from_node] = (condition, edges)
+
+    def set_entry_point(self, node: str) -> None:
+        """Set the entry point of the graph"""
+        self.entry_point = node
+
+    async def arun(self, state: Any) -> Any:
+        """Run the graph with the given state"""
+        current_node = self.entry_point
+        while current_node is not None and current_node is not END:
+            # Get the handler for the current node
+            handler = self.nodes.get(current_node)
+            if handler:
+                # Execute the handler
+                state = await handler(state)
+
+            # Check conditional edges first
+            if current_node in self.conditional_edges:
+                condition_func, edge_map = self.conditional_edges[current_node]
+                condition_result = condition_func(state)
+                current_node = edge_map.get(condition_result)
+            else:
+                # Use regular edges
+                current_node = self.edges.get(current_node)
+
         return state
 
-class ToolNode:
-    def __init__(self, *args, **kwargs):
-        pass
-    
-    def __call__(self, *args, **kwargs):
-        return None
-
-END = "END"
-
-# Define prebuilt as an attribute of this module, not a class
-class _PrebuiltModule:
-    def __init__(self):
-        self.ToolNode = ToolNode
-
-prebuilt = _PrebuiltModule()
-
-# Make this module look more like the real langgraph
-__all__ = ["StateGraph", "END", "prebuilt", "ToolNode"]
-
-# Register the module in sys.modules so it can be imported correctly
-module_name = "langgraph"
-sys.modules[module_name] = sys.modules[__name__]
-sys.modules[f"{module_name}.graph"] = type("graph", (), {"StateGraph": StateGraph, "END": END})
-sys.modules[f"{module_name}.prebuilt"] = type("prebuilt", (), {"ToolNode": ToolNode})
+    def run(self, state: Any) -> Any:
+        """Synchronous version of arun"""
+        import asyncio
+        return asyncio.run(self.arun(state))
