@@ -5,6 +5,7 @@ on:
     branches: [ master, clean-branch ]
   pull_request:
     branches: [ master, clean-branch ]
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   test-and-build:
@@ -47,3 +48,79 @@ jobs:
       - name: Cleanup
         if: always()
         run: docker rm -f backend || true
+
+  aws-copilot-deploy:
+    name: 🚀 Deploy to AWS with Copilot
+    needs: [test-and-build]  # Run only after test-and-build succeeds
+    runs-on: ubuntu-latest
+    # Only deploy on pushes to main/master branch (not on PRs)
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 🔧 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 📦 Install AWS Copilot CLI
+        run: |
+          echo "Installing AWS Copilot CLI..."
+          curl -Lo copilot https://github.com/aws/copilot-cli/releases/latest/download/copilot-linux
+          chmod +x copilot
+          sudo mv copilot /usr/local/bin/copilot
+          copilot --version
+          echo "✅ Copilot CLI installed successfully"
+
+      - name: 🔍 Verify Copilot Configuration
+        run: |
+          echo "Checking if Copilot app exists..."
+          if copilot app ls 2>/dev/null | grep -q "counsel-ai"; then
+            echo "✅ Copilot app 'counsel-ai' found"
+          else
+            echo "⚠️ Copilot app 'counsel-ai' not found - may need manual initialization"
+          fi
+
+      - name: 🚀 Deploy API with Copilot
+        run: |
+          echo "Starting deployment to production environment..."
+          echo "Current directory: $(pwd)"
+          echo "Available files: $(ls -la)"
+          
+          # Ensure we're in the right directory context for Copilot
+          # Copilot expects to find copilot/ directory and manifest files
+          if [ -d "copilot" ]; then
+            echo "✅ Found copilot directory"
+            ls -la copilot/
+          else
+            echo "❌ copilot directory not found"
+            exit 1
+          fi
+          
+          # Deploy the service
+          echo "Deploying API service to production..."
+          copilot svc deploy --name api --env prod
+          
+          echo "✅ Deployment completed successfully"
+
+      - name: 🔗 Get Service URL
+        if: success()
+        run: |
+          echo "Getting service information..."
+          copilot svc show --name api --env prod || echo "Service info not available yet"
+          
+          echo "🎉 Deployment successful! Check AWS Console for service URL."
