@@ -4,7 +4,8 @@ FROM python:3.11-slim
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
@@ -13,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
     python3-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -20,10 +22,16 @@ COPY requirements-docker-clean.txt /tmp/requirements.txt
 
 # Install Python dependencies with explicit upgrade of pip and debug output
 RUN pip install --no-cache-dir --upgrade pip && \
-    # Install langgraph and its dependencies first
-    pip install --no-cache-dir "langgraph==0.2.20" "networkx>=3.0" "typing-extensions>=4.5.0" && \
-    # Install remaining requirements
-    pip install --no-cache-dir -r /tmp/requirements.txt && \
+    # Force uninstall langgraph if it exists
+    pip uninstall -y langgraph || true && \
+    # Install langgraph directly from PyPI with verbose output
+    pip install --no-cache-dir --verbose langgraph==0.2.20 && \
+    # Verify langgraph installation
+    python -c "import langgraph; print(f'LangGraph version: {langgraph.__version__}')" && \
+    # Install remaining requirements with verbose output
+    pip install --no-cache-dir --verbose -r /tmp/requirements.txt && \
+    # Force reinstall langgraph to ensure it's not overwritten
+    pip install --no-cache-dir --force-reinstall --verbose langgraph==0.2.20 && \
     # Debug output
     echo "Installed packages:" && \
     pip list && \
@@ -31,10 +39,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
     python -c "import sys; print('\n'.join(sys.path))" && \
     echo "Testing langgraph import:" && \
     python -c "from langgraph.graph import StateGraph, END; print('✅ LangGraph import successful')" && \
-    # Verify langgraph installation
-    pip show langgraph && \
-    # List all files in site-packages related to langgraph
-    find /usr/local/lib/python3.11/site-packages/langgraph -type f
+    # List all files in site-packages
+    echo "Contents of site-packages:" && \
+    ls -la /usr/local/lib/python3.11/site-packages/ && \
+    echo "Contents of langgraph directory:" && \
+    ls -la /usr/local/lib/python3.11/site-packages/langgraph*
 
 # Copy application code
 COPY . /app
@@ -49,12 +58,26 @@ RUN useradd --create-home --shell /bin/bash app && \
 
 USER app
 
-# Verify imports again after user switch
+# Verify imports again after user switch and show detailed debug info
 RUN echo "Testing imports as app user:" && \
+    python -c "import sys; print('Python path:'); print('\n'.join(sys.path))" && \
+    python -c "import langgraph; print(f'LangGraph version: {langgraph.__version__}')" && \
     python -c "from langgraph.graph import StateGraph, END; print('✅ LangGraph import successful as app user')" && \
     python -c "import app.agents.counsel_agent; print('✅ Counsel agent import successful')" && \
-    # Additional debug info
-    python -c "import langgraph; print(f'LangGraph version: {langgraph.__version__}')" && \
-    python -c "import sys; print('Python path:'); print('\n'.join(sys.path))"
+    # Show permissions of site-packages
+    ls -la /usr/local/lib/python3.11/site-packages/langgraph* || true
 
-CMD ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Add a startup script to verify imports before running uvicorn
+COPY <<'EOF' /app/start.sh
+#!/bin/bash
+echo "Verifying imports before starting server..."
+python -c "import langgraph; print(f'LangGraph version: {langgraph.__version__}')"
+python -c "from langgraph.graph import StateGraph, END"
+python -c "import app.agents.counsel_agent"
+echo "All imports verified successfully, starting server..."
+exec uvicorn app.api.main:app --host 0.0.0.0 --port 8000
+EOF
+
+RUN chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]
